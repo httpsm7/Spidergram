@@ -1,0 +1,91 @@
+chains:
+  - id: C001
+    name: "IDOR → Account Takeover"
+    severity: CRITICAL
+    requires: [IDOR, AUTH_BYPASS]
+    steps:
+      - "Use IDOR to find victim user_id"
+      - "Change victim email via IDOR"
+      - "Trigger password reset to attacker email"
+      - "Full account takeover"
+
+  - id: C002
+    name: "OTP No Rate Limit → Brute Force"
+    severity: CRITICAL
+    requires: [NO_RATE_LIMIT_OTP]
+    steps:
+      - "Confirm OTP has no rate limiting"
+      - "Brute force 000000–999999"
+      - "Access account without password"
+
+  - id: C003
+    name: "JWT None Algorithm → Admin Access"
+    severity: CRITICAL
+    requires: [JWT_NONE_ALG]
+    steps:
+      - "Decode JWT, change alg to none"
+      - "Set role=admin in payload"
+      - "Server accepts unsigned token"
+
+  - id: C004
+    name: "SSRF → Cloud Credential Theft"
+    severity: CRITICAL
+    requires: [SSRF]
+    steps:
+      - "SSRF to 169.254.169.254"
+      - "Read IAM security credentials"
+      - "Full cloud account compromise"
+
+  - id: C005
+    name: "SSTI → Remote Code Execution"
+    severity: CRITICAL
+    requires: [SSTI]
+    steps:
+      - "Confirm SSTI via {{7*7}}"
+      - "Escalate to OS command payload"
+      - "Full server RCE"
+
+  - id: C006
+    name: "SQLi → Authentication Bypass"
+    severity: CRITICAL
+    requires: [SQLI]
+    steps:
+      - "SQLi in login field"
+      - "Inject: ' OR 1=1--"
+      - "Auth bypassed, access as admin"
+
+  - id: C007
+    name: "LFI → Log Poisoning → RCE"
+    severity: CRITICAL
+    requires: [LFI]
+    steps:
+      - "Confirm LFI via /etc/passwd"
+      - "Poison log with PHP payload"
+      - "Include log → RCE"
+
+  - id: C008
+    name: "JWT Weak Secret → Token Forgery"
+    severity: CRITICAL
+    requires: [JWT_WEAK_SECRET]
+    steps:
+      - "Crack JWT secret from wordlist"
+      - "Forge token with admin role"
+      - "Full admin access"
+
+  - id: C009
+    name: "Race Condition → Double Purchase"
+    severity: HIGH
+    requires: [RACE_CONDITION]
+    steps:
+      - "Send 50 concurrent purchase requests"
+      - "Backend processes before stock check"
+      - "Item purchased multiple times at price of one"
+
+  - id: C010
+    name: "Mass Assignment → Role Escalation"
+    severity: CRITICAL
+    requires: [MASS_ASSIGNMENT]
+    steps:
+      - "Inject role=admin in request body"
+      - "Server binds parameter without filtering"
+      - "Account escalated to admin"
