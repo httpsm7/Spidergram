@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- ── Stat Cards ─────────────────────────────────────────────────────── -->
+<div class="stat-grid mb-20">
+  <div class="glass stat-card">
+    <div class="stat-icon">📤</div>
+    <div class="stat-value" data-target="{{ stats.today }}" data-raw="{{ stats.today }}" data-key="today">{{ stats.today }}</div>
+    <div class="stat-label">Posts Today</div>
+  </div>
+  <div class="glass stat-card">
+    <div class="stat-icon">✅</div>
+    <div class="stat-value green" data-target="{{ stats.success }}" data-raw="{{ stats.success }}" data-key="success">{{ stats.success }}</div>
+    <div class="stat-label">Total Success</div>
+  </div>
+  <div class="glass stat-card">
+    <div class="stat-icon">❌</div>
+    <div class="stat-value red" data-target="{{ stats.failed }}" data-raw="{{ stats.failed }}" data-key="failed">{{ stats.failed }}</div>
+    <div class="stat-label">Total Failed</div>
+  </div>
+  <div class="glass stat-card">
+    <div class="stat-icon">🤖</div>
+    <div class="stat-value" data-target="{{ agents|length }}" data-raw="{{ agents|length }}">{{ agents|length }}</div>
+    <div class="stat-label">Active Agents</div>
+  </div>
+  <div class="glass stat-card">
+    <div class="stat-icon">⏳</div>
+    <div class="stat-value" style="color:var(--yellow)" data-target="{{ pending }}" data-raw="{{ pending }}">{{ pending }}</div>
+    <div class="stat-label">Queued Tasks</div>
+  </div>
+</div>
+
+<!-- ── System Health Widget ───────────────────────────────────────────── -->
+<div class="glass p-22 mb-20">
+  <div class="section-title">
+    System Health
+    <span class="live-label"><span class="live-dot"></span>Live · updates every 10s</span>
+  </div>
+  <div class="health-grid">
+    <div class="health-row">
+      <div class="health-label"><span class="health-key">CPU Usage</span><span class="health-val" id="healthCPU">—</span></div>
+      <div class="health-bar-wrap"><div class="health-bar" id="healthCPUBar" style="width:0%;background:var(--green)"></div></div>
+    </div>
+    <div class="health-row">
+      <div class="health-label"><span class="health-key">RAM Usage</span><span class="health-val" id="healthRAM">—</span></div>
+      <div class="health-bar-wrap"><div class="health-bar" id="healthRAMBar" style="width:0%;background:var(--blue)"></div></div>
+    </div>
+    <div class="health-row">
+      <div class="health-label"><span class="health-key">Ollama Latency</span><span class="health-val" id="healthLatency">—</span></div>
+      <div class="health-bar-wrap"><div class="health-bar" style="width:100%;background:transparent"></div></div>
+    </div>
+    <div class="health-row">
+      <div class="health-label"><span class="health-key">Media Disk</span><span class="health-val" id="healthDisk">—</span></div>
+      <div class="health-bar-wrap"><div class="health-bar" id="healthDiskBar" style="width:0%;background:var(--yellow)"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Pipeline Visualiser ───────────────────────────────────────────── -->
+<div class="glass p-22 mb-20">
+  <div class="section-title">
+    Pipeline Status
+    <span style="font-size:0.72rem;color:var(--muted);font-weight:400">world_news · last run {{ now.strftime('%H:%M') }}</span>
+  </div>
+  <div class="pipeline-wrap">
+    {% set steps = [('Fetch','📡','done'),('Dedup','🔍','done'),('Script','✍️','running'),
+                    ('Media','🖼','pending'),('Voice','🎙','pending'),('Video','🎬','pending'),
+                    ('Subs','📝','pending'),('Publish','📤','pending')] %}
+    {% for label, icon, st in steps %}
+    <div class="pipeline-step">
+      <div class="pipeline-node">
+        <div class="pipeline-circle {{ st }}">
+          {% if st == 'done' %}✓{% else %}{{ icon }}{% endif %}
+        </div>
+        <span class="pipeline-label {% if st != 'pending' %}active{% endif %}">{{ label }}</span>
+      </div>
+      {% if not loop.last %}
+        <div class="pipeline-connector {% if st == 'done' %}done{% else %}dim{% endif %}"></div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- ── Agent Quick Cards ──────────────────────────────────────────────── -->
+<div class="glass p-22 mb-20">
+  <div class="section-title">
+    Agents Overview
+    <a href="/agents" style="font-size:0.78rem;color:var(--blue);font-weight:400">Manage →</a>
+  </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap">
+    {% for a in agents %}
+    <div style="flex:1 1 140px;padding:12px 14px;border-radius:14px;background:var(--surface2);border:1px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div class="agent-dot {{ 'active' if a.active else 'idle' }}"></div>
+        <span class="mono" style="font-size:0.85rem;font-weight:700">{{ a.posts_today|default(0) }}</span>
+      </div>
+      <div style="font-weight:600;font-size:0.82rem;margin-bottom:2px">{{ a.name }}</div>
+      <div style="font-size:0.70rem;color:var(--muted)">{{ a.niche }}</div>
+      <button class="btn btn-primary btn-sm mt-10" style="width:100%;justify-content:center"
+              onclick="runAgent('{{ a.id }}')">▶ Run</button>
+    </div>
+    {% else %}
+    <p class="muted">No agents. <a href="/agents">Add one →</a></p>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- ── Recent Posts with Real-time ───────────────────────────────────── -->
+<div class="glass p-22">
+  <div class="section-title">
+    Recent Posts
+    <div class="flex-center gap-8">
+      <span class="live-label" id="liveStatus">
+        <span class="live-dot" id="liveDot" style="display:none"></span>
+        <span id="liveLabelText" style="display:none">Live</span>
+      </span>
+      <a href="/logs" style="font-size:0.78rem;color:var(--blue);font-weight:400">View all →</a>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table class="data-table" id="liveLogFeed">
+      <thead>
+        <tr><th>Agent</th><th>Title</th><th>Status</th><th>Posted At</th></tr>
+      </thead>
+      <tbody>
+        {% for log in logs %}
+        <tr onclick="openVideoModal({{ log|tojson|replace("'","\\'")|replace('"','&quot;') }})">
+          <td class="mono">{{ log.agent_id }}</td>
+          <td class="truncate">{{ log.news_title[:65] }}</td>
+          <td>
+            {% if log.status == 'success' %}<span class="pill pill-green">✓ Success</span>
+            {% elif log.status == 'failed' %}<span class="pill pill-red">✗ Failed</span>
+            {% else %}<span class="pill pill-blue">⟳ {{ log.status }}</span>{% endif %}
+          </td>
+          <td class="muted mono" style="font-size:0.70rem">{{ log.posted_at }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="muted" style="text-align:center;padding:24px">No posts yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Start live log polling on dashboard
+document.addEventListener('DOMContentLoaded', () => {
+  startLogPolling();
+  document.getElementById('liveLabelText').style.display = 'inline';
+  document.getElementById('liveDot').style.display = 'inline-block';
+});
+</script>
+{% endblock %}

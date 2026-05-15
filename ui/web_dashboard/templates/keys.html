@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}API Keys{% endblock %}
+{% block page_title %}API Keys{% endblock %}
+
+{% block content %}
+<!-- Add / Update -->
+<div class="glass p-22 mb-20">
+  <div class="section-title">Add / Update API Key</div>
+  <form method="POST" action="/keys/set">
+    <div class="form-grid mb-14">
+      <div class="form-group">
+        <label>Key Name</label>
+        <input type="text" name="name" placeholder="NEWSAPI_KEY" required autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label>Value</label>
+        <input type="password" name="value" placeholder="sk-…" required autocomplete="new-password">
+      </div>
+    </div>
+    <div class="flex-center gap-8">
+      <button type="submit" class="btn btn-primary btn-sm">🔐 Save Encrypted</button>
+      <span class="muted" style="font-size:0.72rem">Stored with Fernet encryption. Values are never shown again.</span>
+    </div>
+  </form>
+</div>
+
+<!-- Stored Keys -->
+<div class="glass p-22 mb-20">
+  <div class="section-title">Stored Keys ({{ key_names|length }})</div>
+  {% if key_names %}
+  <div style="display:flex;flex-direction:column;gap:8px">
+    {% set required = ['NEWSAPI_KEY','GNEWS_API_KEY','PEXELS_API_KEY','ELEVENLABS_API_KEY','GROK_API_KEY','CLOUDINARY_URL'] %}
+    {% for name in key_names %}
+    <div style="display:flex;align-items:center;gap:14px;padding:12px 16px;border-radius:12px;background:var(--surface2);border:1px solid var(--border);transition:border-color 0.2s"
+         onmouseover="this.style.borderColor='var(--border-hi)'" onmouseout="this.style.borderColor='var(--border)'">
+      <span class="pill pill-green">● Set</span>
+      <code class="mono" style="flex:1">{{ name }}</code>
+      <span class="muted" style="font-size:0.75rem">••••••••••</span>
+      <form method="POST" action="/keys/delete" style="margin:0">
+        <input type="hidden" name="name" value="{{ name }}">
+        <button type="submit" class="btn btn-danger btn-sm btn-icon"
+                onclick="return confirm('Delete {{ name }}?')">🗑</button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="muted" style="text-align:center;padding:20px">No keys stored yet.</p>
+  {% endif %}
+</div>
+
+<!-- Required keys reference -->
+<div class="glass p-22">
+  <div class="section-title">Required Keys Reference</div>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead><tr><th>Key</th><th>Purpose</th><th>Status</th><th>Get It</th></tr></thead>
+      <tbody>
+        {% set ref = [
+          ('NEWSAPI_KEY',       'Primary news source',   'newsapi.org'),
+          ('GNEWS_API_KEY',     'Fallback news source',  'gnews.io'),
+          ('PEXELS_API_KEY',    'Stock media images',    'pexels.com/api'),
+          ('ELEVENLABS_API_KEY','AI Voice TTS',          'elevenlabs.io'),
+          ('GROK_API_KEY',      'Fallback LLM (Grok)',   'x.ai'),
+          ('CLOUDINARY_URL',    'Video CDN storage',     'cloudinary.com'),
+          ('IG_ACCESS_TOKEN',   'Instagram Graph API',   'developers.facebook.com'),
+          ('IG_BUSINESS_ID',    'Instagram Account ID',  'developers.facebook.com'),
+        ] %}
+        {% for k, purpose, link in ref %}
+        <tr>
+          <td><code class="mono">{{ k }}</code></td>
+          <td class="muted" style="font-size:0.8rem">{{ purpose }}</td>
+          <td>
+            {% if k in key_names %}
+            <span class="pill pill-green">● Set</span>
+            {% else %}
+            <span class="pill pill-red">○ Missing</span>
+            {% endif %}
+          </td>
+          <td><a href="https://{{ link }}" target="_blank" rel="noreferrer" style="font-size:0.78rem">{{ link }}</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

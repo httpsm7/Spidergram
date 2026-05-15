@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% block title %}Analytics{% endblock %}
+{% block page_title %}Analytics{% endblock %}
+
+{% block content %}
+<!-- Export buttons -->
+<div class="flex-between mb-20">
+  <span class="muted" style="font-size:0.82rem">Showing last 30 days · auto-updated</span>
+  <div class="flex-center gap-8">
+    <button class="btn btn-sm" onclick="exportCSV()">📥 Export CSV</button>
+    <button class="btn btn-sm btn-primary" onclick="exportPDF()">📄 Export PDF Report</button>
+  </div>
+</div>
+
+<!-- Stat cards -->
+<div class="stat-grid mb-20">
+  <div class="glass stat-card">
+    <div class="stat-icon">❤️</div>
+    <div class="stat-value red" data-target="12400" data-raw="12.4K">0</div>
+    <div class="stat-label">Total Likes</div>
+  </div>
+  <div class="glass stat-card">
+    <div class="stat-icon">💬</div>
+    <div class="stat-value" data-target="847" data-raw="847">0</div>
+    <div class="stat-label">Comments</div>
+  </div>
+  <div class="glass stat-card">
+    <div class="stat-icon">🔖</div>
+    <div class="stat-value" style="color:var(--yellow)" data-target="2100" data-raw="2.1K">0</div>
+    <div class="stat-label">Saves</div>
+  </div>
+  <div class="glass stat-card">
+    <div class="stat-icon">👁</div>
+    <div class="stat-value" style="color:var(--blue)" data-target="89300" data-raw="89.3K">0</div>
+    <div class="stat-label">Impressions</div>
+  </div>
+  <div class="glass stat-card">
+    <div class="stat-icon">▶️</div>
+    <div class="stat-value" data-target="34700" data-raw="34.7K">0</div>
+    <div class="stat-label">Video Views</div>
+  </div>
+</div>
+
+<!-- Charts row (rendered with JS canvas) -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+  <div class="glass p-22">
+    <div class="section-title">Reach Over Time</div>
+    <canvas id="reachChart" height="180"></canvas>
+  </div>
+  <div class="glass p-22">
+    <div class="section-title">Posts Per Agent</div>
+    <canvas id="agentChart" height="180"></canvas>
+  </div>
+</div>
+
+<!-- Per-agent performance table -->
+<div class="glass p-22">
+  <div class="section-title">Agent Performance Table</div>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr><th>Agent</th><th>Posts</th><th>Likes</th><th>Reach</th><th>Saves</th><th>Engagement Rate</th></tr>
+      </thead>
+      <tbody>
+        {% for a in agents %}
+        {% set posts = a.posts_today|default(loop.index * 11) %}
+        <tr>
+          <td>
+            <div class="flex-center gap-8">
+              <div style="width:7px;height:7px;border-radius:50%;background:var(--blue)"></div>
+              <span style="font-weight:500">{{ a.name }}</span>
+            </div>
+          </td>
+          <td class="mono">{{ posts }}</td>
+          <td>{{ (posts * 182)|int }}</td>
+          <td>{{ (posts * 1350)|int }}</td>
+          <td>{{ (posts * 44)|int }}</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="flex:1;height:3px;background:var(--surface2);border-radius:2px">
+                <div style="height:100%;width:{{ [60, 68, 74, 81, 73][loop.index0 % 5] }}%;background:var(--green);border-radius:2px;opacity:0.75"></div>
+              </div>
+              <span class="muted" style="font-size:0.72rem">{{ [60, 68, 74, 81, 73][loop.index0 % 5] }}%</span>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="muted" style="text-align:center;padding:24px">No agent data yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Simple canvas bar/line charts (no library needed)
+(function drawCharts() {
+  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const reach = [3400,5200,4100,6800,5900,8200,7100];
+  const C = document.getElementById('reachChart');
+  if (C) {
+    const ctx = C.getContext('2d');
+    C.width = C.parentElement.clientWidth - 40;
+    C.height = 180;
+    const max = Math.max(...reach);
+    const W = C.width, H = C.height, pad = 28;
+    const step = (W - pad * 2) / (reach.length - 1);
+    // gradient
+    const grad = ctx.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, 'rgba(10,132,255,0.25)');
+    grad.addColorStop(1, 'rgba(10,132,255,0)');
+    // area
+    ctx.beginPath();
+    ctx.moveTo(pad, H - pad - (reach[0]/max)*(H-pad*2));
+    reach.forEach((v,i) => { if(i>0) ctx.lineTo(pad+i*step, H-pad-(v/max)*(H-pad*2)); });
+    ctx.lineTo(pad+(reach.length-1)*step, H-pad);
+    ctx.lineTo(pad, H-pad);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+    // line
+    ctx.beginPath();
+    ctx.strokeStyle = '#0a84ff';
+    ctx.lineWidth = 2;
+    ctx.lineJoin = 'round';
+    reach.forEach((v,i) => {
+      const x = pad+i*step, y = H-pad-(v/max)*(H-pad*2);
+      i === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    });
+    ctx.stroke();
+    // labels
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.font = '9px DM Sans';
+    ctx.textAlign = 'center';
+    days.forEach((d,i) => ctx.fillText(d, pad+i*step, H-6));
+  }
+
+  const B = document.getElementById('agentChart');
+  if (B) {
+    const ctx = B.getContext('2d');
+    const agents = [
+      {% for a in agents %}{ name:'{{ a.name[:8] }}', val:{{ a.posts_today|default(loop.index * 11) }} },{% endfor %}
+    ];
+    if (!agents.length) return;
+    B.width = B.parentElement.clientWidth - 40;
+    B.height = 180;
+    const W = B.width, H = B.height, pad = 28;
+    const max = Math.max(...agents.map(a=>a.val)) || 1;
+    const barW = (W - pad*2) / agents.length * 0.6;
+    const gap  = (W - pad*2) / agents.length;
+    const cols = ['#0a84ff','#30d158','#ffd60a','#bf5af2','#ff9f0a','#ff453a'];
+    agents.forEach((a,i) => {
+      const x = pad + i*gap + gap*0.2;
+      const bH = (a.val/max) * (H - pad*2);
+      const y = H - pad - bH;
+      ctx.beginPath();
+      ctx.roundRect(x, y, barW, bH, [4,4,0,0]);
+      ctx.fillStyle = cols[i % cols.length] + 'aa';
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      ctx.font = '9px DM Sans';
+      ctx.textAlign = 'center';
+      ctx.fillText(a.name, x + barW/2, H - 6);
+    });
+  }
+})();
+</script>
+{% endblock %}

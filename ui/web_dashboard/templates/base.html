@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Spidergram{% endblock %} — Control Panel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<!-- ── Loading Screen ────────────────────────────────────────────────── -->
+<div id="loadingScreen">
+    <svg width="110" height="110" viewBox="0 0 110 110">
+    <style>
+      @keyframes drawSpoke{from{stroke-dashoffset:60;opacity:0}to{stroke-dashoffset:0;opacity:1}}
+      @keyframes fadeRing{from{opacity:0;transform-origin:55px 55px;transform:scale(0.4)}to{opacity:1;transform-origin:55px 55px;transform:scale(1)}}
+    </style>
+    <g stroke="rgba(255,255,255,0.14)" fill="none" stroke-width="0.7">
+      <line x1="55" y1="55" x2="103.0" y2="55.0" style="stroke-dasharray:60;animation:drawSpoke 0.8s ease-out 0.00s both"/>
+      <line x1="55" y1="55" x2="96.57" y2="79.0" style="stroke-dasharray:60;animation:drawSpoke 0.8s ease-out 0.04s both"/>
+      <line x1="55" y1="55" x2="79.0" y2="96.57" style="stroke-dasharray:60;animation:drawSpoke 0.8s ease-out 0.08s both"/>
+      <line x1="55" y1="55" x2="55.0" y2="103.0" style="stroke-dasharray:60;animation:drawSpoke 0.8s ease-out 0.12s both"/>
+      <line x1="55" y1="55" x2="31.0" y2="96.57" style="stroke-dasharray:60;animation:drawSpoke 0.8s ease-out 0.16s both"/>
+      <line x1="55" y1="55" x2="13.43" y2="79.0" style="stroke-dasharray:60;animation:drawSpoke 0.8s ease-out 0.20s both"/>
+      <line x1="55" y1="55" x2="7.0" y2="55.0" style="stroke-dasharray:60;animation:drawSpoke 0.8s ease-out 0.24s both"/>
+      <line x1="55" y1="55" x2="13.43" y2="31.0" style="stroke-dasharray:60;animation:drawSpoke 0.8s ease-out 0.28s both"/>
+      <line x1="55" y1="55" x2="31.0" y2="13.43" style="stroke-dasharray:60;animation:drawSpoke 0.8s ease-out 0.32s both"/>
+      <line x1="55" y1="55" x2="55.0" y2="7.0" style="stroke-dasharray:60;animation:drawSpoke 0.8s ease-out 0.36s both"/>
+      <line x1="55" y1="55" x2="79.0" y2="13.43" style="stroke-dasharray:60;animation:drawSpoke 0.8s ease-out 0.40s both"/>
+      <line x1="55" y1="55" x2="96.57" y2="31.0" style="stroke-dasharray:60;animation:drawSpoke 0.8s ease-out 0.44s both"/>
+      <polygon points="65.0,55.0 63.66,60.0 60.0,63.66 55.0,65.0 50.0,63.66 46.34,60.0 45.0,55.0 46.34,50.0 50.0,46.34 55.0,45.0 60.0,46.34 63.66,50.0" style="animation:fadeRing 0.5s ease-out 0.35s both;opacity:0"/>
+      <polygon points="75.0,55.0 72.32,65.0 65.0,72.32 55.0,75.0 45.0,72.32 37.68,65.0 35.0,55.0 37.68,45.0 45.0,37.68 55.0,35.0 65.0,37.68 72.32,45.0" style="animation:fadeRing 0.5s ease-out 0.47s both;opacity:0"/>
+      <polygon points="87.0,55.0 82.71,71.0 71.0,82.71 55.0,87.0 39.0,82.71 27.29,71.0 23.0,55.0 27.29,39.0 39.0,27.29 55.0,23.0 71.0,27.29 82.71,39.0" style="animation:fadeRing 0.5s ease-out 0.59s both;opacity:0"/>
+      <polygon points="99.0,55.0 93.11,77.0 77.0,93.11 55.0,99.0 33.0,93.11 16.89,77.0 11.0,55.0 16.89,33.0 33.0,16.89 55.0,11.0 77.0,16.89 93.11,33.0" style="animation:fadeRing 0.5s ease-out 0.71s both;opacity:0"/>
+    </g>
+    <circle cx="55" cy="55" r="22" fill="none" stroke="rgba(255,255,255,0.04)" style="animation:ripple 2s ease-out 1.2s infinite"/>
+    <circle cx="55" cy="55" r="5"  fill="rgba(255,255,255,0.85)" style="animation:spiderPulse 1.6s ease-in-out 0.9s infinite"/>
+    <circle cx="55" cy="55" r="9"  fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="0.8"/>
+  </svg>
+  <div class="loader-title">SPIDERGRAM</div>
+  <div class="loader-sub">AUTONOMOUS NEWS ENGINE v3</div>
+  <div class="loader-phase" id="loaderPhase">Initializing CEO Brain…</div>
+  <div class="loader-bar-wrap"><div class="loader-bar" id="loaderBar"></div></div>
+</div>
+
+<!-- ── Sidebar Overlay (mobile) ──────────────────────────────────────── -->
+<div id="sidebarOverlay"></div>
+
+<!-- ── Sidebar ───────────────────────────────────────────────────────── -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">🕷</div>
+    <div>
+      <div class="logo-title">SPIDERGRAM</div>
+      <div class="logo-sub">AUTONOMOUS v3</div>
+    </div>
+  </div>
+
+  <ul class="nav-links">
+    <li><a href="/"         class="{% if request.path=='/' %}active{% endif %}">
+      <span class="nav-icon">◈</span> Dashboard
+    </a></li>
+    <li><a href="/agents"   class="{% if '/agents' in request.path %}active{% endif %}">
+      <span class="nav-icon">◎</span> Agents
+    </a></li>
+    <li><a href="/logs"     class="{% if '/logs' in request.path %}active{% endif %}">
+      <span class="nav-icon">☰</span> Activity Logs
+    </a></li>
+    <li><a href="/analytics"class="{% if '/analytics' in request.path %}active{% endif %}">
+      <span class="nav-icon">◫</span> Analytics
+    </a></li>
+    <li><a href="/keys"      class="{% if request.path == '/keys' %}active{% endif %}">
+      <span class="nav-icon">⊛</span> API Keys
+    </a></li>
+    <li>
+      <a href="/api_usage" class="{% if '/api_usage' in request.path %}active{% endif %}" id="apiMonitorNav">
+        <span class="nav-icon">📡</span> API Monitor
+        <span class="nav-badge" id="apiWarnBadge" style="display:none;background:rgba(255,214,10,0.2);border-color:rgba(255,214,10,0.4);color:#ffd60a">!</span>
+      </a>
+    </li>
+    <li><a href="#" onclick="toggleChat();return false;">
+      <span class="nav-icon">◉</span> CEO Brain <span class="nav-badge">AI</span>
+    </a></li>
+  </ul>
+
+  <div class="sidebar-status">
+    <div class="sidebar-status-title">System Status</div>
+    <div class="status-row"><span class="status-label">Ollama</span>    <span class="status-val" style="color:var(--green)"><span class="status-dot green"></span>Online</span></div>
+    <div class="status-row"><span class="status-label">Pipeline</span>  <span class="status-val" style="color:var(--green)"><span class="status-dot green"></span>Running</span></div>
+    <div class="status-row"><span class="status-label">Scheduler</span> <span class="status-val" style="color:var(--green)"><span class="status-dot green"></span>Active</span></div>
+    <div class="status-row"><span class="status-label">Instagram</span> <span class="status-val" style="color:var(--green)"><span class="status-dot green"></span>Connected</span></div>
+  </div>
+</nav>
+
+<!-- ── Main Content ───────────────────────────────────────────────────── -->
+<main class="main-content">
+  <!-- Topbar -->
+  <header class="topbar">
+    <div class="flex-center gap-10">
+      <button class="hamburger" onclick="toggleSidebar()" title="Menu">☰</button>
+      <h1 class="page-title">{% block page_title %}Dashboard{% endblock %}</h1>
+    </div>
+
+    <div class="topbar-right">
+      <span class="clock" id="clock"></span>
+      <div class="topbar-divider"></div>
+
+      <!-- System Live Badge -->
+      <div style="display:flex;align-items:center;gap:5px;padding:4px 10px;background:var(--green-bg);border:1px solid var(--green-bdr);border-radius:20px">
+        <div class="status-dot green" style="animation:livePulse 2s ease-in-out infinite"></div>
+        <span style="font-size:0.67rem;color:var(--green);font-weight:600">All Live</span>
+      </div>
+
+      <div class="topbar-divider"></div>
+
+      <!-- Theme Toggle -->
+      <button class="theme-btn" onclick="toggleTheme()" title="Toggle theme">
+        <span id="themeIcon">🌙</span>
+      </button>
+
+      <!-- Notification Bell -->
+      <div class="notif-wrapper">
+        <button class="notif-btn" id="notifBtn" onclick="toggleNotifications()" title="Notifications">
+          🔔
+          <span class="notif-count" id="notifCount" style="display:none">0</span>
+        </button>
+        <div class="notif-dropdown glass" id="notifDropdown">
+          <div class="notif-header">
+            <span>Notifications</span>
+            <span style="color:var(--muted);font-size:0.72rem;font-weight:400">Last 10</span>
+          </div>
+          <div id="notifList"></div>
+        </div>
+      </div>
+
+      <!-- Command Palette shortcut -->
+      <button class="btn btn-sm btn-ghost" onclick="openCommandPalette()" title="⌘K">
+        ⌘K
+      </button>
+
+      <!-- CEO Brain -->
+      <button class="btn btn-sm" onclick="toggleChat()">💬 CEO Brain</button>
+    </div>
+  </header>
+
+  <!-- Flash messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+      <div class="alert alert-{{ cat }}">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <!-- Page Content -->
+  <div class="content page-content">
+    {% block content %}{% endblock %}
+  </div>
+</main>
+
+<!-- ── Bottom Nav (mobile) ───────────────────────────────────────────── -->
+<div class="bottom-nav">
+  <div class="bottom-nav-inner">
+    <button class="bnav-item" data-href="/"         onclick="location.href='/'">         <span class="bnav-icon">◈</span><span class="bnav-label">Home</span></button>
+    <button class="bnav-item" data-href="/agents"   onclick="location.href='/agents'">   <span class="bnav-icon">◎</span><span class="bnav-label">Agents</span></button>
+    <button class="bnav-item" data-href="/logs"     onclick="location.href='/logs'">     <span class="bnav-icon">☰</span><span class="bnav-label">Logs</span></button>
+    <button class="bnav-item" data-href="/analytics"onclick="location.href='/analytics'"><span class="bnav-icon">◫</span><span class="bnav-label">Stats</span></button>
+    <button class="bnav-item"                       onclick="toggleChat()">              <span class="bnav-icon">◉</span><span class="bnav-label">CEO</span></button>
+  </div>
+</div>
+
+<!-- ── Command Palette ───────────────────────────────────────────────── -->
+<div id="cmdPalette">
+  <div class="cmd-box">
+    <div class="cmd-input-row">
+      <span>⌘</span>
+      <input id="cmdInput" type="text" placeholder="Search commands, pages, agents…" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="cmd-results" id="cmdResults"></div>
+    <div class="cmd-footer">
+      <span class="cmd-hint"><kbd>↑↓</kbd> navigate</span>
+      <span class="cmd-hint"><kbd>↵</kbd> select</span>
+      <span class="cmd-hint"><kbd>Esc</kbd> close</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── CEO Brain Chat Drawer ─────────────────────────────────────────── -->
+<div class="chat-drawer" id="chatDrawer">
+  <div class="chat-header">
+    <div style="width:32px;height:32px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:0.9rem">🤖</div>
+    <div>
+      <div>CEO Brain</div>
+      <div class="chat-status"><span class="status-dot green"></span> Ollama Online</div>
+    </div>
+    <button onclick="toggleChat()" class="close-btn">✕</button>
+  </div>
+  <div class="chat-messages" id="chatMessages">
+    <div class="msg assistant">Hello! I'm the CEO Brain. Ask me anything or give me a command — I manage all your agents and pipelines.</div>
+  </div>
+  <div class="chat-input-row">
+    <input id="chatInput" type="text" placeholder="Type a command…">
+    <button onclick="sendChat()" class="btn btn-sm btn-primary">Send</button>
+  </div>
+</div>
+<div class="chat-overlay" id="chatOverlay" onclick="toggleChat()"></div>
+
+<!-- ── Video Preview Modal ───────────────────────────────────────────── -->
+<div class="modal-overlay" id="videoModal" onclick="if(event.target===this)closeVideoModal()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title" id="videoModalTitle">Video Preview</span>
+      <button class="btn btn-sm btn-ghost btn-icon" onclick="closeVideoModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <video id="modalVideo" controls style="width:100%;border-radius:10px;background:#000;margin-bottom:16px;max-height:300px">
+        Your browser does not support the video tag.
+      </video>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
+        <div class="glass p-20 glass-sm" style="padding:12px 14px">
+          <div style="font-size:0.67rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px">Agent</div>
+          <div style="font-family:'Space Mono',monospace;font-size:0.82rem" id="modalAgent">—</div>
+        </div>
+        <div class="glass p-20 glass-sm" style="padding:12px 14px">
+          <div style="font-size:0.67rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px">Status</div>
+          <div style="font-size:0.82rem" id="modalStatus">—</div>
+        </div>
+        <div class="glass p-20 glass-sm" style="padding:12px 14px">
+          <div style="font-size:0.67rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px">Posted At</div>
+          <div style="font-size:0.78rem;color:var(--muted)" id="modalPostedAt">—</div>
+        </div>
+      </div>
+      <div style="font-size:0.8rem;color:var(--muted);line-height:1.55" id="modalCaption"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="showToast('📤 Shared to Instagram')">📤 Share</button>
+      <button class="btn btn-sm btn-ghost" onclick="showToast('📋 Link copied')">🔗 Copy Link</button>
+      <button class="btn btn-sm btn-ghost" onclick="closeVideoModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Instagram Preview Modal ──────────────────────────────────────── -->
+<div class="modal-overlay" id="igModal" onclick="if(event.target===this)closeIGPreview()">
+  <div class="modal-box" style="max-width:660px">
+    <div class="modal-header">
+      <span class="modal-title">Instagram Reel Preview — <span id="igModalAgentName"></span></span>
+      <button class="btn btn-sm btn-ghost btn-icon" onclick="closeIGPreview()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="ig-modal-layout">
+        <!-- Phone mockup -->
+        <div class="ig-phone">
+          <div class="ig-notch"><div class="ig-notch-dot"></div></div>
+          <div class="ig-screen">
+            <div class="ig-topbar">
+              <div class="ig-avatar"></div>
+              <div>
+                <div class="ig-username" id="igPreviewUsername">@spidergram_agent</div>
+                <div style="font-size:0.58rem;color:#888">Sponsored · News</div>
+              </div>
+              <span style="margin-left:auto;color:#ccc;font-size:0.9rem">···</span>
+            </div>
+            <div class="ig-media">📰</div>
+            <div class="ig-actions">
+              <span class="ig-action">🤍</span>
+              <span class="ig-action">💬</span>
+              <span class="ig-action">📤</span>
+              <span style="margin-left:auto" class="ig-action">🔖</span>
+            </div>
+            <div class="ig-caption">
+              <strong style="color:#f2f2f7">spidergram_news</strong> Breaking: Latest update from our automated news pipeline. Stay informed with Spidergram's 24/7 coverage.
+            </div>
+            <div class="ig-hashtags">#BreakingNews #India #WorldNews #SpidergramAI</div>
+          </div>
+        </div>
+        <!-- Meta info -->
+        <div class="ig-meta">
+          <div>
+            <div style="font-size:0.67rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Engagement Estimate</div>
+            <div class="ig-stat-row">
+              <div class="ig-stat-card"><div class="ig-stat-val" style="color:var(--red)">1.2K</div><div class="ig-stat-lbl">Likes</div></div>
+              <div class="ig-stat-card"><div class="ig-stat-val">84</div><div class="ig-stat-lbl">Comments</div></div>
+              <div class="ig-stat-card"><div class="ig-stat-val" style="color:var(--yellow)">320</div><div class="ig-stat-lbl">Saves</div></div>
+              <div class="ig-stat-card"><div class="ig-stat-val" style="color:var(--blue)">8.4K</div><div class="ig-stat-lbl">Reach</div></div>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:0.67rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Caption & Hashtags</div>
+            <textarea rows="4" style="width:100%;resize:none" placeholder="Caption will appear here after generation…"></textarea>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-primary btn-sm" onclick="showToast('📤 Posted to Instagram')">📤 Post Now</button>
+            <button class="btn btn-sm" onclick="showToast('📋 Copied')">🔗 Copy Caption</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% block scripts %}{% endblock %}
+<script>
+(function pollApiUsage(){
+  function check(){
+    fetch('/api/usage').then(r=>r.json()).then(data=>{
+      let warnings=0,blocked=0;
+      Object.values(data).forEach(api=>{
+        if(api.status==='warning')warnings++;
+        if(api.status==='blocked')blocked++;
+      });
+      const badge=document.getElementById('apiWarnBadge');
+      const total=warnings+blocked;
+      if(badge){
+        badge.style.display=total>0?'inline-flex':'none';
+        badge.textContent=total;
+        badge.style.background=blocked>0?'rgba(255,59,48,0.2)':'rgba(255,214,10,0.2)';
+        badge.style.borderColor=blocked>0?'rgba(255,59,48,0.4)':'rgba(255,214,10,0.4)';
+        badge.style.color=blocked>0?'#ff3b30':'#ffd60a';
+      }
+      if(blocked>0){
+        let banner=document.getElementById('apiBanner');
+        if(!banner){
+          banner=document.createElement('div');
+          banner.id='apiBanner';
+          banner.style.cssText='padding:8px 26px;background:rgba(255,59,48,0.08);border-bottom:1px solid rgba(255,59,48,0.25);font-size:.78rem;color:#ff3b30;display:flex;align-items:center;gap:8px';
+          const main=document.querySelector('.main-content');
+          if(main)main.insertBefore(banner,main.firstChild);
+        }
+        const names=Object.entries(data).filter(([,v])=>v.status==='blocked').map(([,v])=>v.display_name).join(', ');
+        banner.innerHTML='🚫 <strong>Rate limited:</strong> '+names+' — <a href="/api_usage" style="color:#ff3b30;text-decoration:underline">View API Monitor →</a>';
+      } else {
+        const b=document.getElementById('apiBanner');
+        if(b)b.remove();
+      }
+      if(warnings>0&&!sessionStorage.getItem('api_warn_shown')){
+        const names=Object.entries(data).filter(([,v])=>v.status==='warning').map(([,v])=>v.display_name).join(', ');
+        if(typeof showToast==='function')showToast('⚠️ '+names+' near rate limit (≥90%)');
+        sessionStorage.setItem('api_warn_shown','1');
+      }
+    }).catch(()=>{});
+  }
+  check();
+  setInterval(check,60000);
+})();
+</script>
+</body>
+</html>
