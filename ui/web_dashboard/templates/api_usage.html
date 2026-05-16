@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}API Usage{% endblock %}
+{% block page_title %}API Usage Monitor{% endblock %}
+
+{% block content %}
+<div class="flex-between mb-20">
+  <span class="muted" style="font-size:.82rem">Live API rate-limit tracking · warns at 90% · blocks at 100%</span>
+  <span class="live-label"><span class="live-dot"></span> Auto-refreshes every 30s</span>
+</div>
+
+<!-- Summary bar -->
+<div class="stat-grid mb-20" style="grid-template-columns:repeat(3,1fr)">
+  <div class="glass stat-card">
+    <div class="stat-icon">✅</div>
+    <div class="stat-value green" id="apiOkCount">{{ usage.values()|selectattr('status','eq','ok')|list|length }}</div>
+    <div class="stat-label">APIs OK</div>
+  </div>
+  <div class="glass stat-card">
+    <div class="stat-icon">⚠️</div>
+    <div class="stat-value" style="color:var(--yellow)" id="apiWarnCount">{{ usage.values()|selectattr('status','eq','warning')|list|length }}</div>
+    <div class="stat-label">Near Limit (≥90%)</div>
+  </div>
+  <div class="glass stat-card">
+    <div class="stat-icon">🚫</div>
+    <div class="stat-value red" id="apiBlockCount">{{ usage.values()|selectattr('status','eq','blocked')|list|length }}</div>
+    <div class="stat-label">Rate Limited</div>
+  </div>
+</div>
+
+<!-- Per-API cards -->
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px" id="apiCards">
+  {% for key, info in usage.items() %}
+  {% set col = 'var(--green)' if info.status == 'ok' else ('var(--yellow)' if info.status == 'warning' else 'var(--red)') %}
+  <div class="glass" style="padding:20px" id="card_{{ key }}">
+    <div class="flex-between mb-14">
+      <div>
+        <div style="font-weight:600;font-size:.9rem;margin-bottom:2px">{{ info.display_name }}</div>
+        <div style="font-size:.68rem;color:var(--muted)">{{ key }}</div>
+      </div>
+      <div>
+        {% if info.status == 'ok' %}
+          <span class="pill pill-green">● OK</span>
+        {% elif info.status == 'warning' %}
+          <span class="pill pill-yellow" style="animation:livePulse 1.2s ease-in-out infinite">⚠ Near Limit</span>
+        {% else %}
+          <span class="pill pill-red" style="animation:livePulse 0.8s ease-in-out infinite">🚫 Blocked</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Usage bar -->
+    <div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+        <span style="font-size:.7rem;color:var(--muted)">{{ info.used|default(0)|int }} / {{ info.total|default(0)|int }} {{ info.unit }}</span>
+        <span style="font-size:.75rem;font-weight:700;font-family:'Space Mono',monospace;color:{{ col }}">{{ info.pct }}%</span>
+      </div>
+      <div style="height:5px;background:var(--surface2);border-radius:3px;overflow:hidden">
+        <div style="height:100%;width:{{ info.pct }}%;background:{{ col }};border-radius:3px;transition:width .8s ease"></div>
+      </div>
+    </div>
+
+    <!-- Reset time -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--surface2);border-radius:9px;margin-bottom:10px">
+      <div>
+        <div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">Resets</div>
+        <div style="font-size:.78rem;font-weight:500">{{ info.reset_str }}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">Plan</div>
+        <div style="font-size:.72rem;color:var(--muted)">{{ info.free_tier }}</div>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <a href="{{ info.docs }}" target="_blank" rel="noreferrer" style="font-size:.72rem;color:var(--blue)">📚 Pricing docs</a>
+      {% if info.status == 'blocked' %}
+      <button class="btn btn-sm btn-success" onclick="resetApi('{{ key }}')">🔄 Force Reset</button>
+      {% endif %}
+    </div>
+  </div>
+  {% else %}
+  <div class="glass p-22" style="grid-column:1/-1;text-align:center;color:var(--muted)">
+    No API keys configured. <a href="/keys">Add keys →</a>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- API call log -->
+<div class="glass p-22 mt-14">
+  <div class="section-title">
+    Recent API Activity
+    <a href="#" onclick="clearApiLog();return false" style="font-size:.72rem;color:var(--muted);font-weight:400">Clear</a>
+  </div>
+  <div id="apiLog" style="font-family:'Space Mono',monospace;font-size:.72rem;color:var(--muted);max-height:180px;overflow-y:auto;line-height:1.7">
+    <div style="color:rgba(255,255,255,.18)">— No activity recorded yet —</div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Auto-refresh every 30s
+setInterval(() => {
+  fetch('/api/usage').then(r=>r.json()).then(data => {
+    Object.entries(data).forEach(([key, info]) => {
+      const card = document.getElementById('card_'+key);
+      if (!card) return;
+      const bar = card.querySelector('[style*="height:100%"]');
+      if (bar) bar.style.width = info.pct + '%';
+      const pctEl = card.querySelector('[style*="Space Mono"]');
+      if (pctEl) pctEl.textContent = info.pct + '%';
+    });
+  }).catch(() => {});
+}, 30000);
+
+function resetApi(key) {
+  if (!confirm('Force reset usage counter for ' + key + '?')) return;
+  fetch('/api/usage/reset', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({key}) })
+    .then(() => { showToast('🔄 Counter reset for ' + key); location.reload(); });
+}
+
+function clearApiLog() {
+  document.getElementById('apiLog').innerHTML = '<div style="color:rgba(255,255,255,.18)">— Log cleared —</div>';
+}
+</script>
+{% endblock %}

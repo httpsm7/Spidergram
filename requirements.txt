@@ -1,0 +1,33 @@
+# ── Core ──────────────────────────────────────────────────────
+python-dotenv>=1.0.0
+requests>=2.31.0
+flask>=3.0.0
+schedule>=1.2.0
+
+# ── Database ───────────────────────────────────────────────────
+peewee>=3.17.0
+
+# ── Security / Encryption ──────────────────────────────────────
+cryptography>=42.0.0
+
+# ── Video Production ───────────────────────────────────────────
+moviepy>=1.0.3
+opencv-python>=4.9.0
+Pillow>=10.0.0
+ffmpeg-python>=0.2.0
+
+# ── Audio (TTS) ────────────────────────────────────────────────
+pyttsx3>=2.90
+
+# ── CDN ────────────────────────────────────────────────────────
+cloudinary>=1.36.0
+
+# ── System Health ──────────────────────────────────────────────
+psutil>=5.9.0
+
+# ── Image Pipeline (Grok + FreeGen + FaceSwap) ─────────────────
+playwright>=1.44.0        # headless browser for FreeGen & AIFaceSwap
+# Install browser:  playwright install chromium
+
+# ── Optional: Semantic deduplication ──────────────────────────
+# sentence-transformers>=2.6.0

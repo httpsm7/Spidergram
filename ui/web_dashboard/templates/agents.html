@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}Agents{% endblock %}
+{% block page_title %}Agent Manager{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="flex-between mb-20">
+  <span class="muted" style="font-size:0.82rem">{{ agents|length }} agent{{ 's' if agents|length != 1 }} configured</span>
+  <button class="btn btn-primary btn-sm" onclick="togglePanel('createPanel')">+ New Agent</button>
+</div>
+
+<!-- Create Agent Panel -->
+<div id="createPanel" class="glass p-22 mb-20 hidden">
+  <div class="section-title">Create New Agent</div>
+  <form method="POST" action="/agents/create">
+    <div class="form-grid mb-14">
+      <div class="form-group">
+        <label>Agent Name</label>
+        <input type="text" name="name" placeholder="CricketNewsAgent" required>
+      </div>
+      <div class="form-group">
+        <label>Niche</label>
+        <input type="text" name="niche" placeholder="Cricket News" required>
+      </div>
+      <div class="form-group col-span2">
+        <label>Prompt</label>
+        <textarea name="prompt" rows="3" placeholder="You are a cricket news agent. Cover IPL, BCCI, international cricket…" required></textarea>
+      </div>
+      <div class="form-group col-span2">
+        <label>Keywords (comma-separated)</label>
+        <input type="text" name="keywords" placeholder="cricket, IPL, BCCI, Test match">
+      </div>
+    </div>
+    <div class="flex-center gap-8">
+      <button type="submit" class="btn btn-primary btn-sm">✓ Create Agent</button>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="togglePanel('createPanel')">Cancel</button>
+    </div>
+  </form>
+</div>
+
+<!-- Agent Grid -->
+<div class="agent-grid mb-20">
+  {% for a in agents %}
+  <div class="glass agent-card" style="border-color: rgba({{ loop.index * 40 % 255 }},{{ loop.index * 80 % 255 }},255,0.15)">
+    <div class="agent-top">
+      <div class="agent-dot {{ 'active' if a.active else 'idle' }}"></div>
+      <span class="agent-posts">{{ a.posts_today|default(0) }}</span>
+    </div>
+    <div>
+      <div class="agent-name">{{ a.name }}</div>
+      <div class="agent-niche">{{ a.niche }}</div>
+    </div>
+
+    <!-- Edit panel (hidden by default) -->
+    <div class="edit-panel hidden" id="edit-{{ a.id }}">
+      <form method="POST" action="/agents/edit">
+        <input type="hidden" name="agent_id" value="{{ a.id }}">
+        <div class="form-group mb-8">
+          <label>IG Account ID</label>
+          <input type="text" name="ig_user_id" value="{{ a.ig_user_id|default('') }}" placeholder="17841400…">
+        </div>
+        <div class="form-group mb-8">
+          <label>Access Token</label>
+          <input type="password" name="ig_access_token" value="{{ a.ig_access_token|default('') }}" placeholder="EAAb…">
+        </div>
+        <div class="form-group mb-8">
+          <label>Post Times (comma-sep HH:MM)</label>
+          <input type="text" name="post_times" value="{{ a.post_times|default('08:00,12:00,18:00') }}" placeholder="08:00,14:00,20:00">
+        </div>
+        <button type="submit" class="btn btn-success btn-sm btn-full">💾 Save Changes</button>
+      </form>
+    </div>
+
+    <div class="agent-actions">
+      <button class="btn btn-primary btn-sm" style="flex:1;justify-content:center"
+              onclick="runAgent('{{ a.id }}')">▶ Run</button>
+      <button class="btn btn-sm btn-ghost btn-icon"
+              onclick="openIGPreview('{{ a.id }}','{{ a.name }}')">📱</button>
+      <button class="btn btn-sm btn-ghost btn-icon"
+              onclick="togglePanel('edit-{{ a.id }}')">✏</button>
+      <form method="POST" action="/agents/delete" style="margin:0">
+        <input type="hidden" name="agent_id" value="{{ a.id }}">
+        <button type="submit" class="btn btn-danger btn-sm btn-icon"
+                onclick="return confirm('Delete {{ a.name }}?')">🗑</button>
+      </form>
+    </div>
+  </div>
+  {% else %}
+  <div class="glass p-22" style="grid-column:1/-1;text-align:center;color:var(--muted)">
+    No agents yet. <a href="#" onclick="togglePanel('createPanel')">Create your first agent →</a>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Scheduler Timeline -->
+<div class="glass p-22">
+  <div class="section-title">
+    Post Schedule Timeline
+    <span style="font-size:0.72rem;color:var(--muted);font-weight:400">Today's posting windows</span>
+  </div>
+  <div class="scheduler-wrap">
+    <div class="scheduler-grid">
+      <!-- Time header -->
+      <div class="scheduler-header">
+        {% for h in [0,3,6,9,12,15,18,21,24] %}
+        <div class="sched-time" style="flex:{{ 3 }}">{{ '%02d:00' % h }}</div>
+        {% endfor %}
+      </div>
+      <!-- Agent rows -->
+      {% set colors = ['#0a84ff','#30d158','#ffd60a','#bf5af2','#ff9f0a','#ff453a'] %}
+      {% for a in agents %}
+      {% set col = colors[loop.index0 % colors|length] %}
+      {% set times = (a.post_times|default('08:00,12:00,18:00')).split(',') %}
+      <div class="scheduler-row">
+        <div class="sched-agent-label" title="{{ a.name }}">{{ a.name[:14] }}</div>
+        <div class="sched-track">
+          {% for t in times %}
+          {% set parts = t.strip().split(':') %}
+          {% set hh = parts[0]|int %}
+          {% set mm = parts[1]|int if parts|length > 1 else 0 %}
+          {% set pct = ((hh * 60 + mm) / 1440 * 100)|round(2) %}
+          <div class="sched-block"
+               style="left:{{ pct }}%;width:3.5%;background:{{ col }}"
+               title="{{ t.strip() }} — {{ a.name }}">
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% else %}
+      <p class="muted" style="padding:16px 0">No agents to display.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function togglePanel(id) {
+  document.getElementById(id)?.classList.toggle('hidden');
+}
+</script>
+{% endblock %}

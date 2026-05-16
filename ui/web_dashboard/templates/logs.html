@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Logs{% endblock %}
+{% block page_title %}Activity Logs{% endblock %}
+
+{% block content %}
+<!-- Filter + Live Controls -->
+<div class="flex-between mb-14">
+  <div class="flex-center gap-6">
+    <button class="btn btn-primary btn-sm" id="filterAll"     onclick="filterLogs('all')">All</button>
+    <button class="btn btn-sm"             id="filterSuccess" onclick="filterLogs('success')">✓ Success</button>
+    <button class="btn btn-sm"             id="filterFailed"  onclick="filterLogs('failed')">✗ Failed</button>
+    <button class="btn btn-sm"             id="filterRunning" onclick="filterLogs('processing')">⟳ Running</button>
+  </div>
+  <div class="flex-center gap-8">
+    <span class="live-label" id="logsLiveLabel">
+      <span class="live-dot"></span> Live · polls every 5s
+    </span>
+    <span class="muted" id="logCount" style="font-size:0.75rem">{{ logs|length }} entries</span>
+  </div>
+</div>
+
+<!-- Logs Table -->
+<div class="glass p-22">
+  <div class="table-wrap">
+    <table class="data-table" id="liveLogFeed">
+      <thead>
+        <tr><th>#</th><th>Agent</th><th>Title</th><th>Status</th><th>Posted At</th></tr>
+      </thead>
+      <tbody id="logTableBody">
+        {% for log in logs %}
+        <tr class="log-row" data-status="{{ log.status }}"
+            onclick="openVideoModal({{ log|tojson|replace('"','&quot;') }})">
+          <td class="mono">{{ log.id }}</td>
+          <td class="mono">{{ log.agent_id }}</td>
+          <td class="truncate">{{ log.news_title[:70] }}</td>
+          <td>
+            {% if log.status == 'success' %}<span class="pill pill-green">✓ Success</span>
+            {% elif log.status == 'failed' %}<span class="pill pill-red">✗ Failed</span>
+            {% elif log.status == 'processing' %}<span class="pill pill-blue">⟳ Running</span>
+            {% else %}<span class="pill pill-yellow">⏳ {{ log.status }}</span>{% endif %}
+          </td>
+          <td class="muted mono" style="font-size:0.70rem">{{ log.posted_at }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="muted" style="text-align:center;padding:28px">No logs yet. Run an agent to see activity here.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  startLogPolling();
+});
+
+let _activeFilter = 'all';
+
+function filterLogs(status) {
+  _activeFilter = status;
+
+  // update button styles
+  ['All','Success','Failed','Running'].forEach((_, i) => {
+    const ids = ['filterAll','filterSuccess','filterFailed','filterRunning'];
+    const statuses = ['all','success','failed','processing'];
+    const btn = document.getElementById(ids[i]);
+    if (btn) {
+      btn.classList.toggle('btn-primary', statuses[i] === status);
+      btn.classList.toggle('btn-sm', true);
+      if (statuses[i] !== status) btn.classList.remove('btn-primary');
+    }
+  });
+
+  const rows = document.querySelectorAll('.log-row');
+  let visible = 0;
+  rows.forEach(r => {
+    const show = (status === 'all') || (r.dataset.status === status);
+    r.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+  const cnt = document.getElementById('logCount');
+  if (cnt) cnt.textContent = visible + ' entries';
+}
+</script>
+{% endblock %}
