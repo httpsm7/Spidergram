@@ -1,5 +1,6 @@
 """
 utils/security.py
+<<<<<<< HEAD
 ─────────────────
 Encrypted API key storage using Fernet symmetric encryption.
 Keys stored in data/db/keys.enc — never in plain text.
@@ -8,11 +9,17 @@ Key storage priority:
   1. ENCRYPTION_KEY env variable (from .env)
   2. data/encryption.key file (auto-created, writable fallback)
   3. Auto-generate new key + print to console for user to copy
+=======
+──────────────────
+Encrypted API key storage using Fernet symmetric encryption.
+Keys are stored in data/db/keys.enc — never in plain text outside .env.
+>>>>>>> 7b1b7349c1d54f6c346dac412232596c219e252b
 """
 
 import base64
 import json
 import os
+<<<<<<< HEAD
 import sys
 from pathlib import Path
 from cryptography.fernet import Fernet, InvalidToken
@@ -126,10 +133,73 @@ def load_keys() -> dict:
         return {}
     except Exception as exc:
         logger.error(f"load_keys error: {exc}")
+=======
+from pathlib import Path
+from cryptography.fernet import Fernet, InvalidToken
+
+from config.settings import DATA_DIR, ENCRYPTION_KEY
+from utils.logger import get_logger
+
+logger = get_logger("utils.security")
+
+KEYS_FILE = DATA_DIR / "db" / "keys.enc"
+
+
+def _ensure_db_dir():
+    """Ensure the keys directory exists."""
+    KEYS_FILE.parent.mkdir(parents=True, exist_ok=True)
+
+
+def _get_fernet() -> Fernet:
+    """Return Fernet instance. Raises clear error if ENCRYPTION_KEY is missing."""
+    key = ENCRYPTION_KEY
+
+    if not key:
+        logger.error("ENCRYPTION_KEY is missing in .env file!")
+        raise RuntimeError(
+            "ENCRYPTION_KEY not found in .env. "
+            "Please generate one and add it to your .env file.\n"
+            "Run: python -c \"from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())\""
+        )
+
+    # Convert to bytes
+    if isinstance(key, str):
+        key_bytes = key.encode()
+    else:
+        key_bytes = key
+
+    # Ensure it's valid 32-byte base64 for Fernet
+    try:
+        if len(key_bytes) != 44:  # Fernet key length after base64
+            key_bytes = base64.urlsafe_b64encode(key_bytes[:32].ljust(32, b'\0'))
+        return Fernet(key_bytes)
+    except Exception as e:
+        logger.error(f"Invalid ENCRYPTION_KEY: {e}")
+        raise RuntimeError("Invalid ENCRYPTION_KEY in .env file.") from e
+
+
+def load_keys() -> dict:
+    """Load all stored API keys (decrypted)."""
+    _ensure_db_dir()
+    if not KEYS_FILE.exists():
+        return {}
+
+    try:
+        f = _get_fernet()
+        raw = KEYS_FILE.read_bytes()
+        decrypted = f.decrypt(raw).decode()
+        return json.loads(decrypted)
+    except InvalidToken:
+        logger.error("Invalid token — encryption key may have changed.")
+        return {}
+    except Exception as exc:
+        logger.error(f"Could not decrypt keys file: {exc}")
+>>>>>>> 7b1b7349c1d54f6c346dac412232596c219e252b
         return {}
 
 
 def save_keys(keys: dict) -> None:
+<<<<<<< HEAD
     """Encrypt and save API keys dict."""
     try:
         KEYS_FILE.parent.mkdir(parents=True, exist_ok=True)
@@ -143,6 +213,18 @@ def save_keys(keys: dict) -> None:
 
 def set_key(name: str, value: str) -> None:
     """Add or update one API key."""
+=======
+    """Encrypt and persist API keys dict."""
+    _ensure_db_dir()
+    f = _get_fernet()
+    encrypted = f.encrypt(json.dumps(keys).encode())
+    KEYS_FILE.write_bytes(encrypted)
+    logger.debug(f"Saved {len(keys)} API keys (encrypted).")
+
+
+def set_key(name: str, value: str) -> None:
+    """Add or update a single API key."""
+>>>>>>> 7b1b7349c1d54f6c346dac412232596c219e252b
     keys = load_keys()
     keys[name] = value
     save_keys(keys)
@@ -150,6 +232,7 @@ def set_key(name: str, value: str) -> None:
 
 
 def get_key(name: str, fallback_env: str = "") -> str:
+<<<<<<< HEAD
     """Get key from encrypted store first, then os.environ."""
     keys = load_keys()
     if name in keys:
@@ -158,6 +241,19 @@ def get_key(name: str, fallback_env: str = "") -> str:
 
 
 def delete_key(name: str) -> bool:
+=======
+    """Retrieve a key: encrypted store first, then environment."""
+    keys = load_keys()
+    if name in keys:
+        return keys[name]
+
+    env_val = os.getenv(fallback_env or name, "")
+    return env_val
+
+
+def delete_key(name: str) -> bool:
+    """Delete a key."""
+>>>>>>> 7b1b7349c1d54f6c346dac412232596c219e252b
     keys = load_keys()
     if name in keys:
         del keys[name]
@@ -167,5 +263,10 @@ def delete_key(name: str) -> bool:
     return False
 
 
+<<<<<<< HEAD
 def list_keys() -> list:
+=======
+def list_keys() -> list[str]:
+    """Return key names only."""
+>>>>>>> 7b1b7349c1d54f6c346dac412232596c219e252b
     return list(load_keys().keys())

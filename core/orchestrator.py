@@ -210,6 +210,7 @@ def run_loop() -> None:
         logger.info("Orchestrator stopped.")
     finally:
         schedule.clear()
+<<<<<<< HEAD
 
 
 def run_once(dry_run: bool = False) -> None:
@@ -226,3 +227,5 @@ def run_once(dry_run: bool = False) -> None:
 def generate_report() -> None:
     """Generate and send nightly report immediately."""
     _nightly_report()
+=======
+>>>>>>> 7b1b7349c1d54f6c346dac412232596c219e252b

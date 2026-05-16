@@ -1,0 +1,21 @@
+# Secrets
+.env
+config/accounts.json
+data/db/keys.enc
+
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+
+# Generated data
+data/media/
+data/logs/
+data/queue/
+data/db/*.db
+data/code_backups/
+
+# OS
+.DS_Store
+Thumbs.db
